@@ -1,14 +1,8 @@
 package tasks;
 
 import common.Person;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -21,69 +15,52 @@ P.P.S Здесь ваши правки необходимо прокоммент
  */
 public class Task9 {
 
-  private long count;
-
   // Костыль, эластик всегда выдает в топе "фальшивую персону".
   // Конвертируем начиная со второй
+
+  // Для пропуска первой персоны используем skip из SteamAPI. За пустой список персон можно не переживать,
+  // skip выдаст пустой stream если количество элементов для пропуска больше длины stream.
+  // Получаем имена при помощи map и собираем в список.
   public List<String> getNames(List<Person> persons) {
-    if (persons.size() == 0) {
-      return Collections.emptyList();
-    }
-    persons.remove(0);
-    return persons.stream().map(Person::firstName).collect(Collectors.toList());
+    return persons.stream().skip(1).map(Person::firstName).collect(Collectors.toList());
   }
 
   // Зачем-то нужны различные имена этих же персон (без учета фальшивой разумеется)
+  // Используем конструктор Set'a. Как показывали на лекции :)
   public Set<String> getDifferentNames(List<Person> persons) {
-    return getNames(persons).stream().distinct().collect(Collectors.toSet());
+    return new HashSet<>(getNames(persons));
   }
 
   // Тут фронтовая логика, делаем за них работу - склеиваем ФИО
+  // При помощи Stream API можно легко преобразовать компоненты имени в stream, отфильтровать null значения
+  // и собрать строку с нужным разделителем.
+  // В изначальной имплементации secondName добавлялся два раза - в начале и в конце.
+  // Изменил второй secondName на middleName.
   public String convertPersonToString(Person person) {
-    String result = "";
-    if (person.secondName() != null) {
-      result += person.secondName();
-    }
-
-    if (person.firstName() != null) {
-      result += " " + person.firstName();
-    }
-
-    if (person.secondName() != null) {
-      result += " " + person.secondName();
-    }
-    return result;
+    return Stream.of(person.secondName(), person.firstName(), person.middleName())
+        .filter(Objects::nonNull)
+        .collect(Collectors.joining(" "));
   }
 
   // словарь id персоны -> ее имя
+  // Используем Stream API для построения Map.
+  // Коллектору задаем mergeFunction, которая оставляет существующий элемент Map.
   public Map<Integer, String> getPersonNames(Collection<Person> persons) {
-    Map<Integer, String> map = new HashMap<>(1);
-    for (Person person : persons) {
-      if (!map.containsKey(person.id())) {
-        map.put(person.id(), convertPersonToString(person));
-      }
-    }
-    return map;
+    return persons.stream().collect(Collectors.toMap(Person::id, this::convertPersonToString, (a, b) -> a));
   }
 
   // есть ли совпадающие в двух коллекциях персоны?
+  // Конвертируем persons2 в Set, чтобы проверять наличие элементов в нем за O(1).
+  // Используем anyMatch для проверки наличия какого-либо из элементов persons1 в persons2Set.
   public boolean hasSamePersons(Collection<Person> persons1, Collection<Person> persons2) {
-    boolean has = false;
-    for (Person person1 : persons1) {
-      for (Person person2 : persons2) {
-        if (person1.equals(person2)) {
-          has = true;
-        }
-      }
-    }
-    return has;
+    Set<Person> persons2Set = new HashSet<>(persons2);
+    return persons1.stream().anyMatch(persons2Set::contains);
   }
 
   // Посчитать число четных чисел
+  // Переменная count лишняя, можно использовать .count() из Stream API
   public long countEven(Stream<Integer> numbers) {
-    count = 0;
-    numbers.filter(num -> num % 2 == 0).forEach(num -> count++);
-    return count;
+    return numbers.filter(num -> num % 2 == 0).count();
   }
 
   // Загадка - объясните почему assert тут всегда верен
@@ -95,4 +72,13 @@ public class Task9 {
     Set<Integer> set = new HashSet<>(integers);
     assert snapshot.toString().equals(set.toString());
   }
+
+  /*
+   * Чтобы понять, почему set.toString() возвращает числа в отсортированном порядке, нужно знать как устроен HashSet.
+   * HashSet не гарантирует, что элементы будут храниться в порядке добавления или в сортированном порядке.
+   * Несмотря на это, в этом примере порядок сохраняется.
+   * Порядок элементов в HashSet зависят от хэшей элементов. В данном случае HashSet хранит числа от 1 до 10000,
+   * и хэш-функция выдает хэши с меньшими значениями для меньших чисел, большие хэши для больших чисел.
+   * Поэтому, хоть в HashSet порядок не гарантирован, внутренне числа хранятся в отсортированном виде.
+   */
 }
