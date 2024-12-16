@@ -21,19 +21,18 @@ public class Task6 {
                                                   Collection<Area> areas) {
 
     Map<Integer, Area> areaIdToArea = areas.stream().collect(Collectors.toMap(Area::getId, Function.identity()));
-    Map<Integer, Person> personIdToPerson = persons.stream().collect(Collectors.toMap(Person::id, Function.identity()));
 
-    return personAreaIds.keySet().stream()
-        .flatMap(personId -> personAreaIds.get(personId)
+    return persons
+        .stream()
+        .flatMap(person -> personAreaIds.getOrDefault(person.id(), Set.of())
             .stream()
-            .map(areaId -> getPersonWithArea(
-                personIdToPerson.get(personId).firstName(),
-                areaIdToArea.get(areaId).getName())
-            ))
+            .map(areaIdToArea::get)
+            .map(area -> getPersonWithArea(person, area))
+        )
         .collect(Collectors.toSet());
   }
 
-  private static String getPersonWithArea(String personName, String areaName) {
-    return String.join(" - ", personName, areaName);
+  private static String getPersonWithArea(Person person, Area area) {
+    return String.join(" - ", person.firstName(), area.getName());
   }
 }

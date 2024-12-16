@@ -28,18 +28,15 @@ public class Task8 {
         .map(Person::id)
         .collect(Collectors.toSet());
 
-    Set<Resume> resumes = personService.findResumes(personIds);
-
-    Map<Integer, Set<Resume>> personIdToResumes = resumes.stream()
+    Map<Integer, Set<Resume>> personIdToResumes = personService.findResumes(personIds)
+        .stream()
         .collect(Collectors.groupingBy(Resume::personId, Collectors.toSet()));
 
     return persons.stream()
-        .map(person -> getPersonWithResumes(person, personIdToResumes))
+        .map(person -> new PersonWithResumes(
+            person,
+            personIdToResumes.getOrDefault(person.id(), Set.of())
+        ))
         .collect(Collectors.toSet());
-  }
-
-  private PersonWithResumes getPersonWithResumes(Person person, Map<Integer, Set<Resume>> personIdToResumes) {
-    Set<Resume> personResumes = personIdToResumes.getOrDefault(person.id(), Set.of());
-    return new PersonWithResumes(person, personResumes);
   }
 }
