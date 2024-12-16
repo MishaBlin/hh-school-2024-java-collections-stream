@@ -2,9 +2,10 @@ package tasks;
 
 import common.Person;
 import common.PersonService;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /*
 Задача 1
@@ -21,8 +22,15 @@ public class Task1 {
     this.personService = personService;
   }
 
+  // Асимптотика алгоритма - O(n), где n - количество элементов в списке personIds.
   public List<Person> findOrderedPersons(List<Integer> personIds) {
-    Set<Person> persons = personService.findPersons(personIds);
-    return Collections.emptyList();
+    Map<Integer, Person> idToPerson = personService.findPersons(personIds)
+        .stream()
+        .collect(Collectors.toMap(Person::id, Function.identity()));
+
+    return personIds
+        .stream()
+        .map(idToPerson::get)
+        .toList();
   }
 }
